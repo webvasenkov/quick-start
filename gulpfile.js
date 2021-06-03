@@ -12,12 +12,12 @@ const babel = require('gulp-babel');
 const imagemin = require('gulp-imagemin');
 const webp = require('gulp-webp');
 const webpHTML = require('gulp-webp-html');
-const webpCSS = require('gulp-webp-css');
 const svgSprite = require('gulp-svg-sprite');
 const ttf2woff = require('gulp-ttf2woff');
 const ttf2woff2 = require('gulp-ttf2woff2');
 const fs = require('fs');
 const pathNode = require('path');
+const tildeImporter = require('node-sass-tilde-importer');
 
 const source = './src/';
 const prod = `./${pathNode.basename(__dirname)}/`;
@@ -74,10 +74,9 @@ const html = () =>
 
 const css = () =>
   src(path.source.styles)
-    .pipe(sass({ outputStyle: 'expanded' }))
+    .pipe(sass({ outputStyle: 'expanded', importer: tildeImporter }))
     .pipe(groupCss())
     .pipe(autoprefixer({ overrideBrowserslist: ['last 5 versions'], cascade: true }))
-    .pipe(webpCSS({ webpClass: '.webp', noWebpClass: '.no-webp' }))
     .pipe(dest(path.prod.styles))
     .pipe(cleanCss())
     .pipe(rename({ extname: '.min.css' }))
@@ -152,7 +151,11 @@ const fontsStyle = () => {
       items.forEach((item) => {
         const [fontName] = item.split('.');
         if (currentFontName !== fontName) {
-          fs.appendFile(pathFonts, `@include font('${fontName}', '${fontName}', '400', 'normal');\n`, () => {});
+          fs.appendFile(
+            pathFonts,
+            `@include font('${fontName}', '${fontName}', '400', 'normal');\n`,
+            () => {}
+          );
         }
         currentFontName = fontName;
       });
@@ -160,4 +163,8 @@ const fontsStyle = () => {
   });
 };
 
-exports.default = parallel(series(clean, parallel(js, css, html, img, fonts), fontsStyle), watchFiles, server);
+exports.default = parallel(
+  series(clean, parallel(js, css, html, img, fonts), fontsStyle),
+  watchFiles,
+  server
+);
